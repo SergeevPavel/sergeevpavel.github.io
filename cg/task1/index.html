@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Mandelbrot</title>
+  <script src="main.js" type="text/javascript"></script>
+  <script src="texture.js" type="text/javascript"></script>
+  <script src="jquery-2.1.4.js" type="text/javascript"></script>
+  <script type="text/javascript" src="dat.gui.js"></script>
+
+  <!-- Fragment shader -->
+
+  <script id="shader-fs" type="x-shader/x-fragment">
+  #define X_RESOLUTION 640.0
+  #define Y_RESOLUTION 480.0
+  #define RATIO (Y_RESOLUTION / X_RESOLUTION)
+  #define MAX_NUM_STEPS 1000
+
+  #ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+  #else
+    precision mediump float;
+  #endif
+  precision mediump int;
+
+  uniform int aIterations;
+  uniform float aThreshold;
+
+  uniform float aX;
+  uniform float aY;
+  uniform float aScale;
+
+  uniform sampler2D u_texture;
+
+  void main() {
+    vec2 z;
+    float x,y;
+    int steps;
+    float normalizedX = aX + (gl_FragCoord.x / X_RESOLUTION) * aScale;
+    float normalizedY = aY + (1.0 - gl_FragCoord.y / Y_RESOLUTION) * aScale * RATIO;
+
+    z.x = normalizedX;
+    z.y = normalizedY;
+
+    for (int i = 0; i < MAX_NUM_STEPS; i++) {
+      steps = i;
+      x = (z.x * z.x - z.y * z.y) + normalizedX;
+      y = (z.y * z.x + z.x * z.y) + normalizedY;
+      if((x * x + y * y) > aThreshold || steps > aIterations) {
+        break;
+      }
+      z.x = x;
+      z.y = y;
+    }
+
+    if (steps > aIterations) {
+      gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    } else {
+      float coord = float(steps) / float(aIterations) * 10.0;
+      vec4 color = texture2D(u_texture, vec2(coord, 0.5));
+      gl_FragColor = color;
+    }
+  }
+  </script>
+
+  <!-- Vertex shader -->
+
+  <script id="shader-vs" type="x-shader/x-vertex">
+  attribute vec2 aVertexPosition;
+
+  void main(void) {
+    gl_Position = vec4(aVertexPosition, 1.0, 1.0);
+  }
+</script>
+
+</head>
+<body onload="start()">
+  <h1>Mandelbrot</h1>
+  <label id="gllabel">
+    <canvas id="glcanvas" height="480" width="640">
+      Ooops...
+    </canvas>
+  </label>
+</body>
+</html>
